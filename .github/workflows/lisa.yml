@@ -13,22 +13,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Install 7zip
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
 
       - name: Define driver and UEFI URLs
         run: |
-          echo "DRIVER_URL=https://github.com/n00b69/woa-lisa/releases/download/Drivers/lisa-drivers-v2518.05.zip" >> $GITHUB_ENV
-          echo "UEFI_URL=https://github.com/n00b69/woa-lisa/releases/download/UEFI/mu-lisa-uefi-v2518.05.img" >> $GITHUB_ENV
+          echo "DRIVER_URL=https://github.com/n00b69/woa-lisa/releases/download/Drivers/XEXPERIMENTAL-lisa-drivers-v2523.12.zip" >> $GITHUB_ENV
+          echo "UEFI_URL=https://github.com/n00b69/woa-lisa/releases/download/UEFI/XEXPERIMENTAL-mu-lisa-v2523.12_TIANMA.img" >> $GITHUB_ENV
 
       - name: Set build date and artifact name
         run: |
           BUILD_DATE=$(date '+%d-%b-%Y')
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=lisa-wininstaller-$BUILD_DATE" >> $GITHUB_ENV
-          echo "ZIP_NAME=lisa_WinInstaller_${BUILD_DATE}.zip" >> $GITHUB_ENV
+          echo "ZIP_NAME=lisa_tianma_WinInstaller_${BUILD_DATE}.zip" >> $GITHUB_ENV
 
       - name: Generate wininstaller.conf
         run: |
@@ -36,22 +36,22 @@ jobs:
           # ================================ Configurations ================================
           DEVICE_CODE="lisa"
           WIN_MIN_SIZE=25
-          ESP_MIN_SIZE=349
+          ESP_MIN_SIZE=345
           REQUIRED_BATTERY=50
           WIN_PART_NAME="WINLISA"
           ESP_PART_NAME="ESPLISA"
           SECURE_BOOT="TRUE"
           WINDOWS_EDITIONS=(
             "Windows 11 Pro"
-            "Windows 11 IoT Enterprise LTSC"
-            "Windows 11 Enterprise LTSC"
+            "Windows 11 IoT Enterprise LTSC 2024"
+            "Windows 11 Enterprise LTSC 2024"
             "Windows 11 Enterprise"
             "Windows 11 Home"
             "Windows 10 Pro"
             "Windows 10 Home"
           )
-          DEVICE_NAME="Xiaomi Pad 5"
-          WI_VERSION="WinInstaller_NABU_R8.3.2"
+          DEVICE_NAME="Xiaomi 11 Lite NE"
+          WI_VERSION="WinInstaller_LISA_R8.3.2"
           BUILD_DATE="$BUILD_DATE"
           MAINTAINER="Project-Silicium And Aistop And idk"
           # ============================== Configurations End ==============================
@@ -114,7 +114,7 @@ jobs:
           rm -rf driver-temp checksum-temp driver.7z
 
       - name: Upload installer artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: |
@@ -129,7 +129,7 @@ jobs:
           7z a "${ZIP_NAME}" installer ToolBox META-INF wininstaller.conf woahelper.apk
 
       - name: Upload release (GitHub Release)
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: LISA_WinInstaller
           files: ${{ env.ZIP_NAME }}
