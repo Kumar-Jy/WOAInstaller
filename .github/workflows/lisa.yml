@@ -36,7 +36,7 @@ jobs:
           # ================================ Configurations ================================
           DEVICE_CODE="lisa"
           WIN_MIN_SIZE=25
-          ESP_MIN_SIZE=345
+          ESP_MIN_SIZE=349
           REQUIRED_BATTERY=50
           WIN_PART_NAME="WINLISA"
           ESP_PART_NAME="ESPLISA"
@@ -86,7 +86,7 @@ jobs:
 
       - name: Download pe.img
         run: |
-          curl -L https://github.com/Kumar-Jy/WOAInstaller/releases/download/WinPE/WinPE23H2.img \
+          curl -L https://github.com/WOAFlasher/WinInstaller/releases/download/WinPE/WinPE_QC7325.img \
           -o installer/pe.img
 
       - name: Setup ToolBox
