@@ -470,6 +470,18 @@ print_centered "Proceeding with formatting and installation"
     "$UPD_TEMP_FOLDER/wimlib-imagex" apply "$WIN_IMAGE" "$SELECTED_INDEX" "$WIN_PATH"
 }
 
+verify_boot() {
+ui_print "verifying current boot partition"
+currentslot=/dev/block/by-name/boot$(getprop ro.boot.slot_suffix)
+size=$(magiskboot verify $currentslot 2>&1 | grep KERNEL_SZ | awk -F'[][]' '{print $2}')
+
+if [ -n "$size" ] && [ "$size" -lt 5000000 ]; then
+  abort "Active slot has UEFI boot image"
+else
+  ui_print "Active slot has Android boot image"
+fi
+} 
+
 rm -rf "$UPD_TEMP_FOLDER"
 mkdir -p "$UPD_TEMP_FOLDER"
 mkdir -p "$IMG_BACKUP_FOLDER"
