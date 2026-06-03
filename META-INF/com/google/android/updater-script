@@ -32,6 +32,8 @@ else
    abort "Battery is below $REQUIRED_BATTERY%, exiting ..."
 fi
 print_line
+verify_boot
+print_line
 print_centered "Fixing GPT"
 aio_progress 0.5 10   # start progress from 0% to 50% in 10 seconds
 run_gptfix
