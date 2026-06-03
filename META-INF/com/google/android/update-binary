@@ -343,9 +343,10 @@ backup_partitions() {
       dd if="$BASE_PATH/$part" of="$IMG_BACKUP_FOLDER/$part.img" bs=8M
     fi
   done
-  for j in /sdcard /external_sd/WOA /usbstorage/WOA /usb_otg/WOA; do
+  for j in /sdcard /external_sd /usbstorage /usb_otg; do
     if [ -d "$j" ]; then
-      cp -rf "$IMG_BACKUP_FOLDER" "$j" 2>/dev/null
+      mkdir -p "$j/WinInstaller"
+      cp -rf "$IMG_BACKUP_FOLDER" "$j/WinInstaller" 2>/dev/null
     fi
   done
 }
