@@ -320,7 +320,7 @@ verify_part() {
 
 run_gptfix() {
   for d in /dev/block/sd?; do
-    if [ -b "$d" ]; then ui_print "Fixing GPT on $d"
+    if [ -b "$d" ]; then print_centered "Fixing GPT on $d"
         printf 'x\nj\n\nk\n\nw\nY\n' | "$UPD_TEMP_FOLDER/gdisk" "$d"
     fi
   done
@@ -472,14 +472,14 @@ print_centered "Proceeding with formatting and installation"
 }
 
 verify_boot() {
-  ui_print "verifying current boot partition"
+  print_centered "verifying current boot partition"
   currentslot=/dev/block/by-name/boot$(getprop ro.boot.slot_suffix)
   size=$(magiskboot verify $currentslot 2>&1 | grep KERNEL_SZ | awk -F'[][]' '{print $2}')
 
   if [ -n "$size" ] && [ "$size" -lt 5000000 ]; then
     abort "Active slot has UEFI boot image"
   else
-    ui_print "Active slot has Android boot image"
+    print_centered "Active slot has Android boot image"
     print_line
     print_centered "Extracting boot and modem to /sdcard/backup"
     backup_partitions $PARTITION_BACKUP
