@@ -482,7 +482,7 @@ verify_boot() {
   else
     print_centered "Active slot has Android boot image"
     print_line
-    print_centered "Extracting boot and modem to /sdcard/backup"
+    print_centered "Backing up critical partitions to WinInstaller folder"
     backup_partitions $PARTITION_BACKUP
   fi
 }
