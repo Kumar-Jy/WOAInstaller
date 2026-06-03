@@ -344,8 +344,9 @@ backup_partitions() {
     fi
   done
   for j in /sdcard /external_sd/WOA /usbstorage/WOA /usb_otg/WOA; do
-    mkdir -p "$j/backup"
-    cp -r -n "$IMG_BACKUP_FOLDER" "$j"
+    if [ -d "$j" ]; then
+      cp -rf "$IMG_BACKUP_FOLDER" "$j" 2>/dev/null
+    fi
   done
 }
 
@@ -471,16 +472,19 @@ print_centered "Proceeding with formatting and installation"
 }
 
 verify_boot() {
-ui_print "verifying current boot partition"
-currentslot=/dev/block/by-name/boot$(getprop ro.boot.slot_suffix)
-size=$(magiskboot verify $currentslot 2>&1 | grep KERNEL_SZ | awk -F'[][]' '{print $2}')
+  ui_print "verifying current boot partition"
+  currentslot=/dev/block/by-name/boot$(getprop ro.boot.slot_suffix)
+  size=$(magiskboot verify $currentslot 2>&1 | grep KERNEL_SZ | awk -F'[][]' '{print $2}')
 
-if [ -n "$size" ] && [ "$size" -lt 5000000 ]; then
-  abort "Active slot has UEFI boot image"
-else
-  ui_print "Active slot has Android boot image"
-fi
-} 
+  if [ -n "$size" ] && [ "$size" -lt 5000000 ]; then
+    abort "Active slot has UEFI boot image"
+  else
+    ui_print "Active slot has Android boot image"
+    print_line
+    print_centered "Extracting boot and modem to /sdcard/backup"
+    backup_partitions $PARTITION_BACKUP
+  fi
+}
 
 rm -rf "$UPD_TEMP_FOLDER"
 mkdir -p "$UPD_TEMP_FOLDER"

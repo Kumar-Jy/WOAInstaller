@@ -38,9 +38,6 @@ print_centered "Fixing GPT"
 aio_progress 0.5 10   # start progress from 0% to 50% in 10 seconds
 run_gptfix
 print_line
-print_centered "Extracting boot and modem to /sdcard/backup"
-backup_partitions $PARTITION_BACKUP
-print_line
 print_centered "Checking if Windows is already installed"
 print_line
 if is_windows_installed; then
