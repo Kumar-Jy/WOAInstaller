@@ -46,8 +46,6 @@ jobs:
             "Windows 11 Enterprise LTSC 2024"
             "Windows 11 Enterprise"
             "Windows 11 Home"
-            "Windows 10 Pro"
-            "Windows 10 Home"
           )
           DEVICE_NAME="Poco X3 Pro"
           WI_VERSION="WinInstaller_vayu_R8.3.3"
