@@ -103,6 +103,7 @@ for var in ESP_PART_NAME ESP_PART_NO DEVICE_NAME WI_VERSION BUILD_DATE SECURE_BO
   sed -i "s|^set $var=.*|set $var=$value|" "$PE_INSTALLER"
 done
 package_extract_folder "ToolBox" "$WIN_MOUNT_FOLDER"
+mv "$WIN_MOUNT_FOLDER/ToolBox" "$WIN_MOUNT_FOLDER/Toolbox"
 package_extract_file "woahelper.apk" "/sdcard/woahelper.apk"
 print_line
 print_centered "Flashing UEFI image"
