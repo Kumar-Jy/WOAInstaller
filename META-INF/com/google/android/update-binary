@@ -107,8 +107,8 @@ aio_progress() {
     ui_print "Usage: aio_progress <target_fraction> <duration_in_seconds>"
     return 1
   fi
-  target="$1"
-  duration="$2"
+  local target="$1"
+  local duration="$2"
   if ! echo "$target" | grep -Eq '^[0-9]+([.][0-9]+)?$'; then
     ui_print "Error: Target value '$target' is not a valid number"
     return 1
@@ -119,9 +119,25 @@ aio_progress() {
   fi
   echo "set_progress $current_progress" >> "$UPD_INTERFACE"
   sleep 0.05
-  delta=$(awk "BEGIN { print $target - $current_progress }")
+  local delta=$(awk "BEGIN { print $target - $current_progress }")
   echo "progress $delta $duration" >> "$UPD_INTERFACE"
   current_progress=$target
+}
+
+set_progress_percent() {
+  if [ $# -ne 1 ]; then
+    ui_print "Error: set_progress_percent expects 1 argument, got $#"
+    ui_print "Usage: set_progress_percent <percentage_0_to_100>"
+    return 1
+  fi
+  local percent="$1"
+  percent=$(echo "$percent" | tr -d '%')
+  if ! echo "$percent" | grep -Eq '^[0-9]+([.][0-9]+)?$'; then
+    ui_print "Error: Percentage value '$percent' is not a valid number"
+    return 1
+  fi
+  local fraction=$(awk "BEGIN { printf \"%.2f\", $percent / 100 }")
+  aio_progress "$fraction" 0.2
 }
 
 package_extract_folder() {
@@ -459,7 +475,7 @@ format_win() {
 }
 
 Windows_Installation() {
-print_centered "Proceeding with formatting and installation"
+    print_centered "Proceeding with formatting and installation"
     print_line
     print_centered "Searching for Windows Image"
     win_esd_search
@@ -469,7 +485,15 @@ print_centered "Proceeding with formatting and installation"
     print_line
     print_centered "Installing $SELECTED_EDITION...."
     format_win
-    "$UPD_TEMP_FOLDER/wimlib-imagex" apply "$WIN_IMAGE" "$SELECTED_INDEX" "$WIN_PATH"
+    print_centered "Please wait, this will take a while..."
+    "$UPD_TEMP_FOLDER/wimlib-imagex" apply "$WIN_IMAGE" "$SELECTED_INDEX" "$WIN_PATH" 2>&1 | tr '\r' '\n' | while read -r line; do
+        if echo "$line" | grep -q "Extracting file data.*%"; then
+            percent=$(echo "$line" | grep -o '[0-9]*%' | tr -d '%')
+            if [ -n "$percent" ]; then
+                set_progress_percent "$percent"
+            fi
+        fi
+    done
 }
 
 verify_boot() {
