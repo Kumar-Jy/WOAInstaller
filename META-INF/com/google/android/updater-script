@@ -62,7 +62,6 @@ case "$selection" in
     ;;
   1)
     aio_progress 0.5 0    # instantly moves progress back to 5% (for reset or rewind)
-    aio_progress 0.9 80   # moves progress from 5% to 90% in 80 seconds
     print_line
     print_centered "You chose to reinstall Windows"
     print_centered "Proceeding with formatting and installation"
@@ -72,7 +71,6 @@ case "$selection" in
   esac
 else
 aio_progress 0.5 0    # instantly moves progress back to 5% (for reset or rewind)
-aio_progress 0.9 80   # moves progress from 5% to 90% in 80 seconds
 print_centered "Windows is not yet installed"
 print_centered "Proceeding with Windows installation"
 print_line
@@ -103,6 +101,7 @@ for var in ESP_PART_NAME ESP_PART_NO DEVICE_NAME WI_VERSION BUILD_DATE SECURE_BO
   sed -i "s|^set $var=.*|set $var=$value|" "$PE_INSTALLER"
 done
 package_extract_folder "ToolBox" "$WIN_MOUNT_FOLDER"
+mv "$WIN_MOUNT_FOLDER/ToolBox" "$WIN_MOUNT_FOLDER/Toolbox"
 package_extract_file "woahelper.apk" "/sdcard/woahelper.apk"
 print_line
 print_centered "Flashing UEFI image"
