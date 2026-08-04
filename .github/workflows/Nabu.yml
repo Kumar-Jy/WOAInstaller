@@ -106,8 +106,8 @@ jobs:
 
       - name: Download Woa-Helper
         run: |
-          curl -L https://github.com/n00b69/woa-helper-update/raw/main/woahelper.apk \
-          -o woahelper.apk
+          WOAHELPER_URL=$(curl -s https://api.github.com/repos/n00b69/woa-helper/releases | grep -o 'https://github.com/n00b69/woa-helper/releases/download/[^"]*\.apk' | grep -v 'DEBUG' | head -n 1)
+          curl -L "$WOAHELPER_URL" -o woahelper.apk
 
       - name: Generate and copy SHA-256 checksums
         run: |
