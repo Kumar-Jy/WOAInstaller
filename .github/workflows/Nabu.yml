@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install 7zip
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
@@ -106,8 +106,8 @@ jobs:
 
       - name: Download Woa-Helper
         run: |
-          curl -L https://github.com/n00b69/woa-helper-update/raw/main/woahelper.apk \
-          -o woahelper.apk
+          WOAHELPER_URL=$(curl -s https://api.github.com/repos/n00b69/woa-helper/releases | grep -o 'https://github.com/n00b69/woa-helper/releases/download/[^"]*\.apk' | grep -v 'DEBUG' | head -n 1)
+          curl -L "$WOAHELPER_URL" -o woahelper.apk
 
       - name: Generate and copy SHA-256 checksums
         run: |
@@ -124,7 +124,7 @@ jobs:
           7z a "${ZIP_NAME}" installer ToolBox META-INF wininstaller.conf woahelper.apk
 
       - name: Upload release (GitHub Release)
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: Nabu-WinInstaller
           files: ${{ env.ZIP_NAME }}

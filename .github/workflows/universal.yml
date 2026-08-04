@@ -1,0 +1,267 @@
+name: Build Universal-Installer ZIP
+
+on:
+  workflow_dispatch:
+    inputs:
+      driver_url:
+        description: 'Driver Archive Direct URL (.7z or .zip)'
+        required: true
+        type: string
+      uefi_url:
+        description: 'UEFI Image Direct URL (.img)'
+        required: true
+        type: string
+      uefi_boot_url:
+        description: 'UEFI Boot Image URL (Optional)'
+        required: false
+        type: string
+      device_code:
+        description: 'Device Code (e.g., nabu, lisa, miatoll, vayu)'
+        required: false
+        default: 'universal'
+        type: string
+      device_name:
+        description: 'Device Name (e.g., Xiaomi Pad 5)'
+        required: false
+        default: 'Universal Device'
+        type: string
+      win_part_name:
+        description: 'Windows Partition Name'
+        required: false
+        default: 'MainOS'
+        type: string
+      esp_part_name:
+        description: 'ESP Partition Name'
+        required: false
+        default: 'EFIESP'
+        type: string
+      win_min_size:
+        description: 'Minimum Windows Partition Size (GB)'
+        required: false
+        default: '30'
+        type: string
+      esp_min_size:
+        description: 'Minimum ESP Partition Size (MB)'
+        required: false
+        default: '345'
+        type: string
+      maintainer:
+        description: 'Maintainer Info'
+        required: false
+        default: 'Project-Aloha'
+        type: string
+      usb_hostmode:
+        description: 'Enable USB Host Mode (Replaces URS extension files from DualRoleExtension)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install 7zip
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
+
+      - name: Define URLs and Variables
+        run: |
+          DRIVER_URL="${{ inputs.driver_url }}"
+          UEFI_URL="${{ inputs.uefi_url }}"
+          UEFI_BOOT_URL="${{ inputs.uefi_boot_url }}"
+          DEVICE_CODE="${{ inputs.device_code }}"
+          DEVICE_NAME="${{ inputs.device_name }}"
+          WIN_PART_NAME="${{ inputs.win_part_name }}"
+          ESP_PART_NAME="${{ inputs.esp_part_name }}"
+          WIN_MIN_SIZE="${{ inputs.win_min_size }}"
+          ESP_MIN_SIZE="${{ inputs.esp_min_size }}"
+          MAINTAINER="${{ inputs.maintainer }}"
+
+          [ -z "$DEVICE_CODE" ] && DEVICE_CODE="universal"
+          [ -z "$DEVICE_NAME" ] && DEVICE_NAME="Universal Device"
+          [ -z "$WIN_PART_NAME" ] && WIN_PART_NAME="MainOS"
+          [ -z "$ESP_PART_NAME" ] && ESP_PART_NAME="EFIESP"
+          [ -z "$WIN_MIN_SIZE" ] && WIN_MIN_SIZE="30"
+          [ -z "$ESP_MIN_SIZE" ] && ESP_MIN_SIZE="345"
+          [ -z "$MAINTAINER" ] && MAINTAINER="Project-Aloha"
+
+          echo "DRIVER_URL=$DRIVER_URL" >> $GITHUB_ENV
+          echo "UEFI_URL=$UEFI_URL" >> $GITHUB_ENV
+          echo "UEFI_BOOT_URL=$UEFI_BOOT_URL" >> $GITHUB_ENV
+          echo "DEVICE_CODE=$DEVICE_CODE" >> $GITHUB_ENV
+          echo "DEVICE_NAME=$DEVICE_NAME" >> $GITHUB_ENV
+          echo "WIN_PART_NAME=$WIN_PART_NAME" >> $GITHUB_ENV
+          echo "ESP_PART_NAME=$ESP_PART_NAME" >> $GITHUB_ENV
+          echo "WIN_MIN_SIZE=$WIN_MIN_SIZE" >> $GITHUB_ENV
+          echo "ESP_MIN_SIZE=$ESP_MIN_SIZE" >> $GITHUB_ENV
+          echo "MAINTAINER=$MAINTAINER" >> $GITHUB_ENV
+
+      - name: Set build date and artifact name
+        run: |
+          BUILD_DATE=$(date '+%d-%b-%Y')
+          RELEASE_TAG="${DEVICE_CODE^^}_WinInstaller"
+          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${DEVICE_CODE}-wininstaller-$BUILD_DATE" >> $GITHUB_ENV
+          echo "ZIP_NAME=${DEVICE_CODE^^}_WinInstaller_${BUILD_DATE}.zip" >> $GITHUB_ENV
+
+      - name: Generate wininstaller.conf
+        run: |
+          cat << EOF > wininstaller.conf
+          # ================================ Configurations ================================
+          DEVICE_CODE="${DEVICE_CODE}"
+          WIN_MIN_SIZE=${WIN_MIN_SIZE}
+          ESP_MIN_SIZE=${ESP_MIN_SIZE}
+          REQUIRED_BATTERY=50
+          WIN_PART_NAME="${WIN_PART_NAME}"
+          ESP_PART_NAME="${ESP_PART_NAME}"
+          SECURE_BOOT="TRUE"
+          WINDOWS_EDITIONS=(
+            "Windows 11 Pro"
+            "Windows 11 IoT Enterprise LTSC 2024"
+            "Windows 11 Enterprise LTSC 2024"
+            "Windows 11 Enterprise"
+            "Windows 11 Home"
+          )
+          DEVICE_NAME="${DEVICE_NAME}"
+          WI_VERSION="WinInstaller_${DEVICE_CODE^^}_Universal"
+          BUILD_DATE="${BUILD_DATE}"
+          MAINTAINER="${MAINTAINER}"
+          # ============================== Configurations End ==============================
+          EOF
+
+      - name: Create temp and target directories
+        run: |
+          mkdir -p driver-temp
+          mkdir -p checksum-temp
+          mkdir -p installer/Driver
+          mkdir -p ToolBox
+
+      - name: Download drivers archive
+        run: curl -L "$DRIVER_URL" -o driver.7z
+
+      - name: Extract all drivers to temp folder
+        run: 7z x driver.7z -odriver-temp
+
+      - name: Apply USB Hostmode drivers if enabled
+        if: ${{ inputs.usb_hostmode == true || inputs.usb_hostmode == 'true' }}
+        run: |
+          echo "USB Hostmode is ENABLED. Downloading and extracting Hostmode_Driver.zip..."
+          
+          mkdir -p hostmode-temp
+          curl -L "https://github.com/WOAFlasher/WinInstaller/releases/download/files/Hostmode_Driver.zip" -o hostmode_driver.zip
+          7z x hostmode_driver.zip -ohostmode-temp
+
+          for filename in "qcursext.cat" "qcursext.inf"; do
+            src_file=$(find hostmode-temp -type f -iname "$filename" | head -n 1)
+            
+            if [ -n "$src_file" ]; then
+              find driver-temp -type f -iname "$filename" | while read -r target_file; do
+                src_sha=$(sha256sum "$src_file" | awk '{print $1}')
+                target_sha=$(sha256sum "$target_file" | awk '{print $1}')
+
+                echo "Checking $filename:"
+                echo "  Downloaded Source ($src_file) SHA-256: $src_sha"
+                echo "  Target ($target_file) SHA-256: $target_sha"
+
+                if [ "$src_sha" = "$target_sha" ]; then
+                  echo "Checksums match. Files are identical, skipping overwrite."
+                else
+                  echo "Checksums differ. Overwriting $target_file with $src_file..."
+                  cp -f "$src_file" "$target_file"
+                fi
+              done
+            else
+              echo "Source file $filename not found in extracted Hostmode_Driver.zip!"
+            fi
+          done
+
+          rm -rf hostmode-temp hostmode_driver.zip
+
+      - name: Copy selected directories into installer/Driver
+        run: |
+          for dir in components definitions tools apps; do
+            find driver-temp -type d -name "$dir" -print0 |
+              while IFS= read -r -d '' match; do
+                echo "Copying: $match"
+                cp -r "$match" installer/Driver/
+              done
+          done
+          rm -rf installer/Driver/tools/DriverUpdater/X86 installer/Driver/tools/DriverUpdater/AMD64
+
+      - name: Download uefi.img
+        run: |
+          curl -L "$UEFI_URL" -o installer/uefi.img
+          if [ -n "$UEFI_BOOT_URL" ]; then
+            curl -L "$UEFI_BOOT_URL" -o installer/uefiboot.img
+          fi
+
+      - name: Download pe.img
+        run: |
+          curl -L https://github.com/Kumar-Jy/WOAInstaller/releases/download/WinPE/WinPE23H2.img \
+          -o installer/pe.img
+
+      - name: Setup ToolBox
+        run: |
+          curl -L https://github.com/Misha803/WOA-Tools/releases/download/WOA-ToolBox/WOA-Toolbox-NEW.exe \
+          -o ToolBox/ToolBox.exe
+          curl -L https://github.com/asheroto/Deploy-Office/releases/latest/download/Deploy-Office.exe \
+          -o ToolBox/Deploy-Office.exe
+          curl -L https://github.com/Kumar-Jy/WOAInstaller/releases/download/files/AtlasPlaybook_v0.5.0-hotfix.apbx \
+          -o ToolBox/AtlasPlaybook.apbx
+          curl -L https://github.com/Kumar-Jy/WinInstaller/releases/download/files/Revi-PB-25.10-Hotfix.apbx \
+          -o ToolBox/ReviPlaybook.apbx
+          curl -L https://download.ameliorated.io/AME%20Beta.zip \
+          -o ToolBox/AME-Wizard.zip
+          curl -L https://github.com/Kumar-Jy/WOAInstaller/releases/download/files/Dism++10ARM.zip \
+          -o ToolBox/Dism++.zip
+          curl -L https://github.com/WOAFlasher/WinInstaller/releases/download/files/QCOM_Drivers.zip \
+          -o ToolBox/QCOM_Drivers.zip
+          curl -L https://github.com/WOAFlasher/WinInstaller/releases/download/files/DisplayLink_Driver.zip \
+          -o ToolBox/DisplayLink_Driver.zip
+
+      - name: Download Woa-Helper
+        run: |
+          WOAHELPER_URL=$(curl -s https://api.github.com/repos/n00b69/woa-helper/releases | grep -o 'https://github.com/n00b69/woa-helper/releases/download/[^"]*\.apk' | grep -v 'DEBUG' | head -n 1)
+          curl -L "$WOAHELPER_URL" -o woahelper.apk
+
+      - name: Generate and copy SHA-256 checksums
+        run: |
+          cd installer && find . -type f -print0 | xargs -0 sha256sum > ../checksum-temp/sha256sum
+          cp ../checksum-temp/sha256sum sha256sum
+
+      - name: Cleanup temp folders
+        continue-on-error: true
+        run: |
+          rm -rf driver-temp checksum-temp driver.7z hostmode-temp hostmode_driver.zip
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: |
+            installer
+            ToolBox
+            META-INF
+            wininstaller.conf
+            woahelper.apk
+
+      - name: Create Final ZIP
+        run: |
+          7z a "${ZIP_NAME}" installer ToolBox META-INF wininstaller.conf woahelper.apk
+
+      - name: Upload release (GitHub Release)
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: ${{ env.ZIP_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

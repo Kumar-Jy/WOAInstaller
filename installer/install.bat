@@ -99,6 +99,15 @@ echo XML file found at %xmlFile%.
 
 echo(
 echo ==========================================================
+echo           Copying STA and Desktop Shortcut...
+echo ==========================================================
+mkdir "%~d0\ProgramData\sta" "%~d0\Users\Default\Desktop" "%~d0\Users\Public\Desktop" 2>nul
+copy /y "%~dp0sta.exe" "%~d0\ProgramData\sta\" >nul
+copy /y "%~dp0Switch2Android.lnk" "%~d0\Users\Default\Desktop\" >nul
+copy /y "%~dp0Switch2Android.lnk" "%~d0\Users\Public\Desktop\" >nul
+
+echo(
+echo ==========================================================
 echo Installation completed. Rebooting into Windows in 5 seconds.
 echo ==========================================================
 "%~dp0sta" -p "%~dp0uefi.img" -n || echo Failed to flash the UEFI image. && goto fail
