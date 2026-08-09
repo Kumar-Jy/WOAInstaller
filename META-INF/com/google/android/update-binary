@@ -375,7 +375,7 @@ is_windows_installed() {
 
   # check for unclean NTFS mount (hibernated/Fast Startup) warning 
   if echo "$MOUNT_LOG" | grep -q "unclean file system"; then
-    abort "NTFS is in an unsafe state! Boot into Windows and reboot to android, then try again."
+    abort "NTFS is in an unsafe state! Boot into Windows and reboot to Android, then try again."
   fi
 
   [ -f "$WIN_MOUNT_FOLDER/Windows/System32/ntoskrnl.exe" ]
@@ -385,21 +385,12 @@ is_partition_rw() { touch "$WIN_MOUNT_FOLDER/rw_test" 2>/dev/null && rm "$WIN_MO
 
 win_esd_search() {
   WIN_IMAGE=""
-  for d in /sdcard/Download /external_sd/WOA /usbstorage/WOA /usb_otg/WOA \
-           /sdcard /external_sd /usbstorage /usb_otg; do
+  for d in /sdcard/Download /external_sd/WOA /usbstorage/WOA /usb_otg/WOA /sdcard /external_sd /usbstorage /usb_otg; do
     [ -d "$d" ] || continue
     for depth in "-maxdepth 1" ""; do
-      WIN_IMAGE=$(find "$d" $depth -type f \( -iname "*.wim" -o -iname "*.esd" \) ! -path "*/Android/*" 2>/dev/null | head -n 1)
+      WIN_IMAGE=$(find "$d" $depth -type f \( -iname "*.wim" -o -iname "*.esd" -o -iname "*.iso" \) ! -path "*/Android/*" 2>/dev/null | head -n 1)
       [ -n "$WIN_IMAGE" ] && { print_centered " Found: $WIN_IMAGE"; return; }
     done
-
-    ISO=$(find "$d" -type f -iname "*.iso" ! -path "*/Android/*" 2>/dev/null | head -n 1)
-    [ -n "$ISO" ] || continue
-    print_centered " Found ISO: $ISO"
-    DIR=$(dirname "$ISO")
-    "$UPD_TEMP_FOLDER/7za" e "$ISO" "sources/install.*" -o"$DIR" -y >/dev/null 2>&1
-    WIN_IMAGE=$(find "$DIR" -type f \( -iname "install.wim" -o -iname "install.esd" \) | head -n 1)
-    [ -n "$WIN_IMAGE" ] && { print_centered "Extracted: $WIN_IMAGE"; return; }
   done
   [ -n "$WIN_IMAGE" ] || { abort "No wim/esd or iso found!"; }
 }
@@ -409,7 +400,7 @@ find_index() {
   "$UPD_TEMP_FOLDER/wimlib-imagex" info "$WIN_IMAGE" > "$wim_info_path" 2>/dev/null
 
   if ! grep -q "ARM64" "$wim_info_path"; then
-      abort "Incompatible Architecture found. Please Download ARM64 Version."
+      abort "Incompatible architecture found. Please download the ARM64 version."
     fi
   for EDITION in "${WINDOWS_EDITIONS[@]}"; do
   INDEX=$(grep -B2 "^Name:[[:space:]]*$EDITION$" "$wim_info_path" | awk '/Index:/ {print $2; exit}')
@@ -418,7 +409,11 @@ find_index() {
     SELECTED_EDITION="$EDITION"
     BUILD=$(grep -m1 "^Build:" "$wim_info_path" | awk '{print $2}')
     SPBUILD=$(grep -m1 "^Service Pack Build:" "$wim_info_path" | awk '{print $4}')
-    print_centered "$SELECTED_EDITION ARM64 Build:$BUILD.$SPBUILD found at Index:$SELECTED_INDEX"
+    print_centered " Windows Version Details "
+    ui_print " Windows Edition :  $SELECTED_EDITION "
+    ui_print " Architecture    :  ARM64 "
+    ui_print " Build           :  $BUILD.$SPBUILD "
+    ui_print " Index           :  $SELECTED_INDEX "
     return 0
   fi
 done
@@ -459,7 +454,7 @@ done
   navigate_menu_timeout "${menu_options[@]}"
   selection=$?
   if [ "$selection" -eq "${#menu_options[@]}" ] || [ "$selection" -eq $((${#menu_options[@]} - 1)) ]; then
-    abort "Error really? you cancelled edition selection"
+    abort "Installation cancelled. No edition selected."
   fi
   SELECTED_INDEX="${wim_indexes[$selection]}"
   chosen_label="${menu_options[$selection]}"
@@ -497,7 +492,7 @@ Windows_Installation() {
 }
 
 verify_boot() {
-  print_centered "verifying current boot partition"
+  print_centered "Verifying current boot partition"
   currentslot=/dev/block/by-name/boot$(getprop ro.boot.slot_suffix)
   size=$(magiskboot verify $currentslot 2>&1 | grep KERNEL_SZ | awk -F'[][]' '{print $2}')
 
@@ -518,9 +513,9 @@ mkdir -p "$WIN_MOUNT_FOLDER"
 
 package_extract_file "wininstaller.conf" "$CONFIG_FILE" || {
     ui_print " "
-    ui_print " Error: Wininstaller configuration file not found or empty"
+    ui_print " Error: WinInstaller configuration file not found or empty"
     ui_print " " 
-    ui_print " Make sure you have the file (wininstaller.conf) in main directory with all configrations"
+    ui_print " Make sure you have the file (wininstaller.conf) in the main directory with all configurations"
     ui_print " " 
     exit 1
 }

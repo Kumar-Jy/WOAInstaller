@@ -78,7 +78,7 @@ Windows_Installation
 fi
 if ! is_windows_installed; then
 print_exit
-print_centered "$SELECTED_EDITION fail to install "
+print_centered "$SELECTED_EDITION failed to install "
 print_centered "ESD/WIM file may be corrupted..."
 nl_print_centered "Reboot to Android and check the ESD/WIM file."
 umount "$WIN_PATH"
@@ -119,10 +119,10 @@ dd if="$UEFI_IMG" of="$BASE_PATH/boot$(getprop ro.boot.slot_suffix)" bs=1M || { 
 umount "$WIN_PATH" "$ESP_PATH"
 sleep 1
 print_line =
-print_centered "Flashing completed, Now reboot to system"
+print_centered "Flashing completed. Now reboot to the system"
 print_centered "Installation will start automatically"
 print_line =
-print_centered "If it fails, Don't Flash it again"
+print_centered "If it fails, don't flash it again"
 print_centered "Ask for help on Telegram: @wininstaller"
 print_centered "Thanks to all WOA Developers & Maintainers"
 print_line =

@@ -6,7 +6,7 @@ if "%1" neq "nofont" (
 	:: maximize CMD window
     reg add "HKCU\Console" /v WindowSize /t REG_DWORD /d 0x00190050 /f >nul 2>&1
     reg add "HKCU\Console" /v WindowPosition /t REG_DWORD /d 0x00000000 /f >nul 2>&1
-    :: re-run the batch file with a flag so it doesnt loop
+    :: re-run the batch file with a flag so it doesn't loop
     start "" /wait cmd /c "%~f0" nofont
     exit /b
 )
@@ -52,7 +52,7 @@ if exist "%~d0\Windows\explorer.exe" (
     echo Windows is already installed.
     goto formatAndAssign
 ) else (
-    echo Windows not installed
+    echo Windows is not installed
     goto fail
 )
 

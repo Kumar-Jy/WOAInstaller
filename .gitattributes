@@ -1,0 +1,28 @@
+# Normalize line endings across the repo
+* text=auto
+
+# Shell scripts for Android recovery must be LF (CRLF breaks them)
+*.sh text eol=lf
+META-INF/com/google/android/update-binary text eol=lf
+META-INF/com/google/android/updater-script text eol=lf
+
+# Batch files traditionally use CRLF
+*.bat text eol=crlf
+
+# Config, docs, and workflows: LF
+*.conf text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+.gitignore text eol=lf
+
+# Binary files: never touch
+*.exe binary
+*.img binary
+*.7z binary
+*.zip binary
+*.apk binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.lnk binary
+META-INF/com/bin/* binary
