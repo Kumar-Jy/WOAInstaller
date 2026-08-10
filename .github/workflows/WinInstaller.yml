@@ -1,4 +1,4 @@
-name: Build Universal-Installer ZIP
+name: Build WoA-Installer
 
 on:
   workflow_dispatch:
