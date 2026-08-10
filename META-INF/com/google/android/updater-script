@@ -29,7 +29,20 @@ print_centered "Checking battery status"
 if verify_battery; then
 print_centered "Battery percentage is sufficient: $CURRENT_BATTERY%"
 else
-   abort "Battery is below $REQUIRED_BATTERY%, exiting ..."
+print_centered "Battery below $REQUIRED_BATTERY%, proceed at your own risk"
+print_centered "Device may brick if battery dies mid-install"
+print_line
+batteryask=("Option 1: Exit" "Option 2: Continue anyway")
+navigate_menu_timeout "${batteryask[@]}"
+case "$selection" in
+  0)
+    abort "Battery is below $REQUIRED_BATTERY%, exiting ..."
+    ;;
+  1)
+    print_line
+    print_centered "Proceeding anyway with $CURRENT_BATTERY% battery"
+    ;;
+esac
 fi
 print_line
 verify_boot
