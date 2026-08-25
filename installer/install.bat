@@ -115,8 +115,7 @@ echo(
 echo ==========================================================
 echo           Cleaning installation files........
 echo ==========================================================
-rmdir /s /q "%~dp0" & shutdown /r /t 5
-exit /b
+rmdir /s /q "%~dp0" & wpeutil reboot
 
 :fail
 echo Take a picture of the error, force reboot and ask for help on Telegram @wininstaller or @woahelperchat
